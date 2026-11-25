@@ -1,102 +1,419 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>Duck Case</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    :root{--bg:#0f0f13;--card:#1b1b22;--primary:#6c5ce7;--accent:#00d1a0;--text:#fff;--sec:#9a9aa8;--border:#2a2a33;}
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',Roboto,sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
-    .header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;background:var(--card);border-bottom:1px solid var(--border);}
-    .header h1{font-size:17px;}
-    .balance{display:flex;align-items:center;gap:6px;font-weight:700;font-size:16px;}
-    .coin{width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,#ffd66b,#f5a623);}
-    .content{flex:1;overflow-y:auto;padding:16px;padding-bottom:70px;}
-    .tab{display:none;}
-    .tab.active{display:block;}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;}
-    .card h3{margin-bottom:6px;}
-    .price{color:var(--accent);font-weight:700;}
-    .btn{display:block;width:100%;padding:10px;border:none;border-radius:10px;background:var(--primary);color:#fff;font-weight:700;font-size:14px;cursor:pointer;margin-top:10px;}
-    .nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--border);padding:6px 0 10px;}
-    .nav button{flex:1;background:none;border:none;color:var(--sec);font-size:11px;padding:6px 0;cursor:pointer;}
-    .nav button span{display:block;font-size:18px;margin-bottom:3px;}
-    .nav button.active{color:var(--primary);font-weight:700;}
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Duck Case</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#0f0f13;--card:#1b1b22;--primary:#6c5ce7;--accent:#00d1a0;--danger:#ef4444;--text:#fff;--sec:#9a9aa8;--border:#2a2a33;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',Roboto,sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+.header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;background:var(--card);border-bottom:1px solid var(--border);}
+.header h1{font-size:17px;}
+.balance{display:flex;align-items:center;gap:6px;font-weight:700;font-size:16px;}
+.coin{width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,#ffd66b,#f5a623);}
+.content{flex:1;overflow-y:auto;padding:16px;padding-bottom:80px;}
+.tab{display:none;}
+.tab.active{display:block;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;}
+.card h3{margin-bottom:6px;}
+.price{color:var(--accent);font-weight:700;}
+.btn{display:block;width:100%;padding:11px;border:none;border-radius:10px;background:var(--primary);color:#fff;font-weight:700;font-size:14px;cursor:pointer;margin-top:10px;}
+.btn.green{background:var(--accent);color:#04241c;}
+.btn.red{background:var(--danger);}
+.btn.small{width:auto;padding:8px 16px;margin:6px 4px 0 0;}
+.row{display:flex;gap:8px;margin-top:10px;}
+.row .btn{margin-top:0;}
+input.inp{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:#12121a;color:#fff;font-size:14px;margin-top:10px;}
+.muted{color:var(--sec);font-size:13px;}
+.log{margin-top:10px;padding:10px;border-radius:10px;background:#12121a;font-size:14px;min-height:20px;white-space:pre-wrap;}
+.nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--border);padding:6px 0 12px;}
+.nav button{flex:1;background:none;border:none;color:var(--sec);font-size:11px;padding:6px 0;cursor:pointer;}
+.nav button span{display:block;font-size:18px;margin-bottom:3px;}
+.nav button.active{color:var(--primary);font-weight:700;}
+.mfield{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
+.mfield button{height:52px;font-size:20px;border:none;border-radius:10px;background:#12121a;color:#fff;cursor:pointer;}
+sup{color:var(--accent);}
+</style>
 </head>
 <body>
-  <div class="header">
-    <h1>Duck Case</h1>
-    <div class="balance"><div class="coin"></div><span id="balance">0</span></div>
+<div class="header">
+  <h1>Duck Case</h1>
+  <div class="balance"><div class="coin"></div><span id="balance">0</span></div>
+</div>
+<div class="content">
+
+  <!-- КЕЙСЫ -->
+  <div class="tab active" id="tab-cases">
+    <div id="cases-list"></div>
   </div>
-  <div class="content">
-    <div class="tab active" id="tab-cases">
-      <div class="card">
-        <h3>🦆 Duck Case</h3>
-        <p class="price">100 монет</p>
-        <button class="btn" onclick="buy('duck')">Открыть</button>
-      </div>
-      <div class="card">
-        <h3>👑 Golden Case</h3>
-        <p class="price">500 монет</p>
-        <button class="btn" onclick="buy('golden')">Открыть</button>
-      </div>
-    </div>
-    <div class="tab" id="tab-games">
-      <div class="card">
-        <h3>🎮 Мини-игры</h3>
-        <p>Скоро появятся: «Угадай число», «Кликер», «Рулетка».</p>
-      </div>
-      <div class="card">
-        <h3>🤝 Пригласить друга</h3>
-        <p>Получи бонус, когда твой друг откроет первый кейс.</p>
-        <button class="btn" onclick="invite()">Пригласить друга</button>
+
+  <!-- ИГРЫ -->
+  <div class="tab" id="tab-games">
+    <div class="card" id="game-menu">
+      <h3>🎮 Мини-игры</h3>
+      <p class="muted">Ставка от 10 монет. Баланс меняется сразу.</p>
+      <div class="row">
+        <button class="btn small" onclick="startGame('bj')">🃏 Блэкджек</button>
+        <button class="btn small" onclick="startGame('mines')">💣 Мины</button>
+        <button class="btn small" onclick="startGame('crash')">📈 Краш</button>
+        <button class="btn small" onclick="startGame('flip')">🪙 Орёл/Решка</button>
+        <button class="btn small" onclick="startGame('hl')">📊 Больше/Меньше</button>
+        <button class="btn small" onclick="startGame('cards')">🂠 Карты</button>
       </div>
     </div>
-    <div class="tab" id="tab-profile">
-      <div class="card">
-        <h3>👤 Профиль</h3>
-        <p>Баланс: <b id="p-balance">0</b> монет</p>
-        <p>Открыто кейсов: <b id="p-opened">0</b></p>
-      </div>
-    </div>
-    <div class="tab" id="tab-top">
-      <div class="card">
-        <h3>🏆 Топ игроков</h3>
-        <p>Скоро здесь появится рейтинг игроков.</p>
-      </div>
+    <div class="card" id="game-area" style="display:none">
+      <div id="game-body"></div>
+      <button class="btn small" onclick="backToMenu()">← К играм</button>
     </div>
   </div>
-  <div class="nav">
-    <button data-tab="cases" class="active"><span>🎁</span>Кейсы</button>
-    <button data-tab="games"><span>🎮</span>Игры</button>
-    <button data-tab="profile"><span>👤</span>Профиль</button>
-    <button data-tab="top"><span>🏆</span>Топ</button>
+
+  <!-- ПРОФИЛЬ -->
+  <div class="tab" id="tab-profile">
+    <div class="card">
+      <h3>👤 Профиль</h3>
+      <p>Баланс: <b id="p-balance">0</b> монет</p>
+      <p>Открыто кейсов: <b id="p-opened">0</b></p>
+      <p>Побед в играх: <b id="p-wins">0</b></p>
+    </div>
+    <div class="card">
+      <h3>🛠 Админ</h3>
+      <input class="inp" id="admin-code" placeholder="Секретный код"/>
+      <button class="btn" onclick="adminLogin()">Войти</button>
+      <div id="admin-panel" style="display:none">
+        <input class="inp" id="admin-amount" placeholder="Сумма (можно -1000)"/>
+        <button class="btn green" onclick="adminAdd()">Начислить себе</button>
+      </div>
+    </div>
   </div>
-  <script>
-    const tg = window.Telegram.WebApp;
-    tg.ready(); tg.expand();
-    let balance = 500;
-    function show(tab){
-      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-      document.getElementById('tab-'+tab).classList.add('active');
-      document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-    }
-    document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>show(b.dataset.tab));
-    function updateBal(){
-      document.getElementById('balance').textContent = balance;
-      document.getElementById('p-balance').textContent = balance;
-    }
-    function buy(caseKey){
-      tg.sendData(JSON.stringify({action:'buy_case', case:caseKey}));
-    }
-    function invite(){
-      tg.sendData(JSON.stringify({action:'invite_friend'}));
-    }
-    updateBal();
-  </script>
+
+  <!-- ПОДДЕРЖКА -->
+  <div class="tab" id="tab-support">
+    <div class="card">
+      <h3>💬 Поддержка</h3>
+      <p>Проблемы с балансом, кейсом или игрой? Напиши нам — ответим быстро.</p>
+      <button class="btn" onclick="goSupport()">Написать в поддержку</button>
+      <p class="muted" style="margin-top:10px">Или прямо в Telegram: @tsartixc</p>
+    </div>
+    <div class="card">
+      <h3>ℹ️ О приложении</h3>
+      <p class="muted">Duck Case — кейсы и мини-игры. Баланс хранится на твоём устройстве. Играя, ты принимаешь, что это развлекательный проект без реальных выплат.</p>
+    </div>
+  </div>
+
+</div>
+<div class="nav">
+  <button data-tab="cases" class="active"><span>🎁</span>Кейсы</button>
+  <button data-tab="games"><span>🎮</span>Игры</button>
+  <button data-tab="profile"><span>👤</span>Профиль</button>
+  <button data-tab="support"><span>💬</span>Поддержка</button>
+</div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.ready(); tg.expand();
+
+const ADMIN_CODE = "duck2026"; // смени на свой секретный код
+const START_BALANCE = 300;
+
+// ---------- БАЛАНС ----------
+let stats = JSON.parse(localStorage.getItem("duck_stats") || "null")
+  || {balance: START_BALANCE, opened: 0, wins: 0, isAdmin: false};
+function save(){ localStorage.setItem("duck_stats", JSON.stringify(stats)); }
+function renderBal(){
+  document.getElementById("balance").textContent = stats.balance;
+  document.getElementById("p-balance").textContent = stats.balance;
+  document.getElementById("p-opened").textContent = stats.opened;
+  document.getElementById("p-wins").textContent = stats.wins;
+}
+function canBet(a){ return a >= 10 && stats.balance >= a; }
+
+// ---------- НАВИГАЦИЯ ----------
+function show(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+}
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>show(b.dataset.tab));
+
+// ---------- КЕЙСЫ ----------
+const cases = [
+  {key:"lucky",  name:"🍀 Lucky Case",  price:50,   items:[["Пустышка",60,0],["30 монет",25,30],["80 монет",12,80],["ДЖЕКПОТ 500",3,500]]},
+  {key:"duck",   name:"🦆 Duck Case",   price:100,  items:[["Пустышка",40,0],["50 монет",35,50],["150 монет",20,150],["ДЖЕКПОТ 1000",5,1000]]},
+  {key:"golden", name:"👑 Golden Case", price:300,  items:[["Пустышка",45,0],["150 монет",30,150],["600 монет",20,600],["ДЖЕКПОТ 3000",5,3000]]},
+  {key:"ruby",   name:"💎 Ruby Case",   price:700,  items:[["Пустышка",50,0],["400 монет",28,400],["1500 монет",17,1500],["ДЖЕКПОТ 7000",5,7000]]},
+  {key:"ghost",  name:"👻 Ghost Case",  price:1500, items:[["Пустышка",55,0],["800 монет",25,800],["3500 монет",16,3500],["ДЖЕКПОТ 15000",4,15000]]},
+  {key:"dragon", name:"🐲 Dragon Case", price:3000, items:[["Пустышка",58,0],["1500 монет",25,1500],["7000 монет",14,7000],["ДЖЕКПОТ 30000",3,30000]]},
+];
+function renderCases(){
+  document.getElementById("cases-list").innerHTML = cases.map((c,i)=>`
+    <div class="card"><h3>${c.name}</h3><p class="price">${c.price} монет</p>
+    <p class="muted">Шансы: ${c.items.map(it=>it[0]+` ${it[1]}%`).join(", ")}</p>
+    <button class="btn" onclick="buyCase(${i})">Открыть</button></div>`).join("");
+}
+function pickCase(c){
+  let r = Math.random()*100, t=0;
+  for(const it of c.items){ t+=it[1]; if(r<=t) return it; }
+  return c.items[c.items.length-1];
+}
+function buyCase(i){
+  const c = cases[i];
+  if(stats.balance < c.price){ toast(`Не хватает монет: нужно ${c.price}`); return; }
+  stats.balance -= c.price; stats.opened++;
+  const item = pickCase(c);
+  stats.balance += item[2];
+  save(); renderBal();
+  toast(item[2] > 0 ? `🎉 ${c.name}: ${item[0]} (+${item[2]})` : `😞 ${c.name}: ${item[0]}`);
+}
+function toast(text){ tg.showAlert ? tg.showAlert(text) : alert(text); }
+
+// ---------- ИГРЫ ----------
+let g = null;
+function startGame(type){
+  document.getElementById("game-menu").style.display="none";
+  document.getElementById("game-area").style.display="block";
+  g = {type};
+  if(type==="bj") gUI(`
+    <h3>🃏 Блэкджек</h3><p class="muted">Набери 21 или больше дилера. Блэкджек x2.5, обычная победа x1.9.</p>`);
+  if(type==="mines") gUI(`
+    <h3>💣 Мины</h3><p class="muted">Поле 3×3, 3 мины. Каждый безопасный клик +35% к множителю.</p>`);
+  if(type==="crash") gUI(`
+    <h3>📈 Краш</h3><p class="muted">Множитель растёт по +25%, но может крашнуться в любой момент.</p>`);
+  if(type==="flip") gUI(`
+    <h3>🪙 Орёл или решка</h3><p class="muted">Угадал — x1.9.</p>`);
+  if(type==="hl") gUI(`
+    <h3>📊 Больше/Меньше</h3><p class="muted">Следующее число больше или меньше текущего? Угадал — x1.9, можно копить.</p>`);
+  if(type==="cards") gUI(`
+    <h3>🂠 Карты</h3><p class="muted">Угадай цвет следующей карты — x1.95.</p>`);
+  askBet();
+}
+function gUI(html){ document.getElementById("game-body").innerHTML = html; }
+function backToMenu(){
+  g = null;
+  document.getElementById("game-menu").style.display="block";
+  document.getElementById("game-area").style.display="none";
+}
+function askBet(){
+  gUI(document.getElementById("game-body").innerHTML + `
+    <input class="inp" id="bet" type="number" placeholder="Ставка (от 10)"/>
+    <button class="btn" onclick="placeBet()">Поставить</button>`);
+}
+function placeBet(){
+  const a = parseInt(document.getElementById("bet").value);
+  if(!canBet(a)){ toast("Ставка от 10 монет и не больше твоего баланса"); return; }
+  stats.balance -= a; save(); renderBal();
+  g.bet = a;
+  if(g.type==="bj") bjDeal();
+  else if(g.type==="mines") minesStart();
+  else if(g.type==="crash") crashStart();
+  else if(g.type==="flip") flipUI();
+  else if(g.type==="hl") hlStart();
+  else if(g.type==="cards") cardsUI();
+}
+function win(a){ stats.balance += a; stats.wins++; save(); renderBal(); }
+function lose(bet){ save(); renderBal(); }
+
+// --- Блэкджек ---
+function bjDeal(){
+  const deck = [];
+  for(let n=2;n<=11;n++) for(let s=0;s<4;s++) deck.push(n);
+  g.deck = deck; g.deck.sort(()=>Math.random()-0.5);
+  g.player=[g.deck.pop(),g.deck.pop()];
+  g.dealer=[g.deck.pop(),g.deck.pop()];
+  bjRender();
+}
+function bjSum(hand){ return hand.reduce((a,b)=>a+b,0); }
+function bjRender(msg=""){
+  gUI(`<h3>🃏 Блэкджек</h3>
+    <p>Твои карты: <b>${g.player.join(", ")}</b> (сумма <b>${bjSum(g.player)}</b>)</p>
+    <p class="muted">Дилер: 🂠 ${g.dealer[0]}, 🂠</p>
+    ${msg?`<div class="log">${msg}</div>`:""}
+    <div class="row">
+      <button class="btn" onclick="bjHit()">🖐 Взять</button>
+      <button class="btn green" onclick="bjStand()">✋ Хватит</button>
+    </div>`);
+}
+function bjEnd(msg){
+  stats.wins += (msg.includes("Победа")) ? 1 : 0;
+  save(); renderBal();
+  gUI(`<p>${msg}</p><p>💰 Баланс: <b>${stats.balance}</b></p>`);
+}
+function bjHit(){
+  g.player.push(g.deck.pop());
+  if(bjSum(g.player)>21){ backToMenu(); bjEnd(`🃏 Перебор ${bjSum(g.player)}. Проигрыш ${g.bet} 💸`); return; }
+  bjRender();
+}
+function bjStand(){
+  while(bjSum(g.dealer)<17) g.dealer.push(g.deck.pop());
+  const p=dj(bjSum(g.player)), d=dj(bjSum(g.dealer));
+  function dj(x){ return x>21 ? -1 : x; }
+  let msg;
+  if(p>21) msg=`Ты ${p}, дилер ${bjSum(g.dealer)}. Проигрыш ${g.bet} 💸`;
+  else if(d<0) msg=`🎉 Победа! Дилер перебрал. +${Math.floor(g.bet*1.9)}`, win(Math.floor(g.bet*1.9));
+  else if(p===21 && g.player.length===2){ const prize=Math.floor(g.bet*2.5); msg=`🃏 БЛЭКДЖЕК! +${prize}`; win(prize); }
+  else if(p>d){ const prize=Math.floor(g.bet*1.9); msg=`🎉 Победа! ${p} против ${d}. +${prize}`; win(prize); }
+  else if(p===d){ msg=`🤝 Ничья. Ставка возвращена`; stats.balance+=g.bet; }
+  else msg=`Ты ${p}, дилер ${d}. Проигрыш ${g.bet} 💸`;
+  backToMenu(); bjEnd(msg);
+}
+
+// --- Мины ---
+function minesStart(){
+  g.bombs = new Set();
+  while(g.bombs.size<3) g.bombs.add(Math.floor(Math.random()*9));
+  g.opened = new Set(); g.mult = 1.0;
+  minesRender();
+}
+function minesRender(msg=""){
+  let cells="";
+  for(let i=0;i<9;i++) cells += `<button onclick="minesClick(${i})">${g.opened.has(i)?"💎":"⬛"}</button>`;
+  gUI(`<h3>💣 Мины</h3>
+    <p class="muted">Открыто ${g.opened.size}/6 · множитель x${g.mult.toFixed(2)}</p>
+    <div class="mfield">${cells}</div>
+    ${msg?`<div class="log">${msg}</div>`:""}
+    <div class="row"><button class="btn green" onclick="minesCash()">💰 Забрать x${g.mult.toFixed(2)}</button></div>`);
+}
+function minesClick(i){
+  if(g.bombs.has(i)){
+    const lost=g.bet; backToMenu();
+    toast(`💣 БУМ! Проигрыш ${lost} 💸`);
+    return;
+  }
+  if(g.opened.has(i)) return;
+  g.opened.add(i); g.mult = +(g.mult*1.35).toFixed(2);
+  if(g.opened.size===6){
+    const prize=Math.floor(g.bet*g.mult);
+    win(prize); backToMenu();
+    toast(`💎 Все клетки открыты! +${prize}`);
+    return;
+  }
+  minesRender();
+}
+function minesCash(){
+  if(g.opened.size===0){ toast("Открой хотя бы одну клетку"); return; }
+  const prize=Math.floor(g.bet*g.mult);
+  win(prize); backToMenu();
+  toast(`💰 Забрал x${g.mult.toFixed(2)}! +${prize}`);
+}
+
+// --- Краш ---
+function crashStart(){
+  g.point = +(Math.max(1.01, Math.min(10, 1/(1-Math.random())))).toFixed(2);
+  g.mult = 1.0;
+  crashRender();
+}
+function crashRender(){
+  gUI(`<h3>📈 Краш</h3>
+    <p style="font-size:28px;font-weight:800;color:var(--accent)">x${g.mult.toFixed(2)}</p>
+    <p class="muted">Ставка ${g.bet}. Точка краша скрыта.</p>
+    <div class="row">
+      <button class="btn" onclick="crashUp()">📈 Поднять</button>
+      <button class="btn green" onclick="crashCash()">💰 Забрать</button>
+    </div>`);
+}
+function crashUp(){
+  g.mult = +(g.mult*1.25).toFixed(2);
+  if(g.mult >= g.point){
+    const lost=g.bet; backToMenu();
+    toast(`💥 КРАШ на x${g.point.toFixed(2)}! Проигрыш ${lost} 💸`);
+    return;
+  }
+  crashRender();
+}
+function crashCash(){
+  const prize=Math.floor(g.bet*g.mult);
+  win(prize); backToMenu();
+  toast(`💰 Забрал на x${g.mult.toFixed(2)}! +${prize}`);
+}
+
+// --- Орёл/Решка ---
+function flipUI(){
+  gUI(`<h3>🪙 Орёл или решка</h3>
+    <div class="row">
+      <button class="btn" onclick="flipGo(0)">🦅 Орёл</button>
+      <button class="btn" onclick="flipGo(1)">🥇 Решка</button>
+    </div>`);
+}
+function flipGo(choice){
+  const res = Math.random()<0.5 ? 0 : 1;
+  const names=["🦅 Орёл","🥇 Решка"];
+  if(choice===res){ const prize=Math.floor(g.bet*1.9); win(prize); backToMenu(); toast(`${names[res]}! 🎉 +${prize}`); }
+  else { backToMenu(); toast(`${names[res]}! Проигрыш ${g.bet} 💸`); }
+}
+
+// --- Больше/Меньше ---
+function hlStart(){
+  g.cur = Math.floor(Math.random()*100)+1;
+  g.mult = 1.0;
+  hlRender();
+}
+function hlRender(msg=""){
+  gUI(`<h3>📊 Больше/Меньше</h3>
+    <p style="font-size:28px;font-weight:800">Число: <b>${g.cur}</b></p>
+    <p class="muted">Множитель x${g.mult.toFixed(2)} · ставка ${g.bet}</p>
+    ${msg?`<div class="log">${msg}</div>`:""}
+    <div class="row">
+      <button class="btn" onclick="hlGo(1)">⬆️ Больше</button>
+      <button class="btn" onclick="hlGo(0)">⬇️ Меньше</button>
+      <button class="btn green" onclick="hlCash()">💰 Забрать</button>
+    </div>`);
+}
+function hlGo(up){
+  const n = Math.floor(Math.random()*100)+1;
+  const ok = up ? n>g.cur : n<g.cur;
+  if(ok){
+    g.mult = +(g.mult*1.9).toFixed(2);
+    g.cur = n;
+    hlRender(`✅ Угадал! Следующее ${n}. Множитель x${g.mult.toFixed(2)}`);
+  } else {
+    backToMenu();
+    toast(`❌ Число ${n}. Проигрыш ${g.bet} 💸`);
+  }
+}
+function hlCash(){
+  if(g.mult===1.0){ toast("Сначала сделай попытку"); return; }
+  const prize=Math.floor(g.bet*g.mult);
+  win(prize); backToMenu();
+  toast(`💰 Забрал x${g.mult.toFixed(2)}! +${prize}`);
+}
+
+// --- Карты ---
+function cardsUI(){
+  gUI(`<h3>🂠 Карты</h3>
+    <div class="row">
+      <button class="btn red" onclick="cardsGo('red')">🔴 Красная</button>
+      <button class="btn" onclick="cardsGo('black')">⚫ Чёрная</button>
+    </div>`);
+}
+function cardsGo(choice){
+  const res = Math.random()<0.5 ? "red" : "black";
+  if(choice===res){ const prize=Math.floor(g.bet*1.95); win(prize); backToMenu(); toast("🎉 Угадал! +"+prize); }
+  else { backToMenu(); toast(`Не угадал. Проигрыш ${g.bet} 💸`); }
+}
+
+// ---------- ПОДДЕРЖКА ----------
+function goSupport(){
+  if(tg.openTelegramLink) tg.openTelegramLink("https://t.me/tsartixc");
+  else window.open("https://t.me/tsartixc","_blank");
+}
+
+// ---------- АДМИН ----------
+function adminLogin(){
+  if(document.getElementById("admin-code").value === ADMIN_CODE){
+    stats.isAdmin = true; save();
+    document.getElementById("admin-panel").style.display="block";
+    toast("Режим админа включён");
+  } else toast("Неверный код");
+}
+function adminAdd(){
+  const a = parseInt(document.getElementById("admin-amount").value);
+  if(isNaN(a)){ toast("Введи число"); return; }
+  stats.balance += a; save(); renderBal();
+  toast(`Начислено ${a}. Баланс: ${stats.balance}`);
+}
+
+renderCases(); renderBal();
+</script>
 </body>
 </html>
-
