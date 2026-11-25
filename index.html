@@ -23,8 +23,6 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
 .btn.green{background:var(--accent);color:#04241c;}
 .btn.red{background:var(--danger);}
 .btn.small{width:auto;padding:8px 16px;margin:6px 4px 0 0;}
-.row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
-.row .btn{margin-top:0;}
 input.inp{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:#12121a;color:#fff;font-size:14px;margin-top:10px;}
 .muted{color:var(--sec);font-size:13px;}
 .log{margin-top:10px;padding:10px;border-radius:10px;background:#12121a;font-size:14px;}
@@ -129,32 +127,32 @@ function show(tab){
 }
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>show(b.dataset.tab));
 
-// ---------- КЕЙСЫ ----------
+// ---------- КЕЙСЫ (ИСПРАВЛЕННЫЕ ШАНСЫ) ----------
 const cases = [
   {key:"lucky",  name:"🍀 Lucky Case",  price:50,
-   items:[["20 монет",60,20],["60 монет",30,60],["ДЖЕКПОТ 500",10,500]]},
+   items:[["15 монет",60,15],["40 монет",30,40],["ДЖЕКПОТ 250",10,250]]},
   {key:"duck",   name:"🦆 Duck Case",   price:100,
-   items:[["40 монет",55,40],["150 монет",35,150],["ДЖЕКПОТ 1000",10,1000]]},
+   items:[["30 монет",55,30],["100 монет",35,100],["ДЖЕКПОТ 400",10,400]]},
   {key:"golden", name:"👑 Golden Case", price:300,
-   items:[["100 монет",55,100],["400 монет",35,400],["ДЖЕКПОТ 3000",10,3000]]},
+   items:[["80 монет",55,80],["300 монет",35,300],["ДЖЕКПОТ 1200",10,1200]]},
   {key:"ruby",   name:"💎 Ruby Case",   price:700,
-   items:[["250 монет",55,250],["900 монет",35,900],["ДЖЕКПОТ 7000",10,7000]]},
+   items:[["220 монет",55,220],["700 монет",35,700],["ДЖЕКПОТ 2800",10,2800]]},
   {key:"ghost",  name:"👻 Ghost Case",  price:1500,
-   items:[["500 монет",55,500],["2000 монет",35,2000],["ДЖЕКПОТ 15000",10,15000]]},
+   items:[["450 монет",55,450],["1600 монет",35,1600],["ДЖЕКПОТ 6000",10,6000]]},
   {key:"dragon", name:"🐲 Dragon Case", price:3000,
-   items:[["1000 монет",55,1000],["4000 монет",35,4000],["ДЖЕКПОТ 30000",10,30000]]},
+   items:[["900 монет",55,900],["3200 монет",35,3200],["ДЖЕКПОТ 12000",10,12000]]},
 ];
 function renderCases(){
   document.getElementById("cases-list").innerHTML = cases.map((c,i)=>`
-    <div class="card" id="case-${i}">
+    <div class="card" id="case-\${i}">
       <h3>${c.name}</h3><p class="price">${c.price} монет</p>
-      <p class="muted">Шансы: ${c.items.map(it=>it[0]+" "+it[1]+"%").join(", ")}</p>
-      <button class="btn" onclick="buyCase(${i})">Открыть</button>
+      <p class="muted">Шансы: \${c.items.map(it=>it+" "+it+"%").join(", ")}</p>
+      <button class="btn" onclick="buyCase(\${i})">Открыть</button>
     </div>`).join("");
 }
 function pickCase(c){
   let r = Math.random()*100, t = 0;
-  for(const it of c.items){ t += it[1]; if(r <= t) return it; }
+  for(const it of c.items){ t += it; if(r <= t) return it; }
   return c.items[c.items.length-1];
 }
 function buyCase(i){
@@ -169,20 +167,20 @@ function buyCase(i){
   let tick = 0;
   const spin = setInterval(()=>{
     const it = c.items[Math.floor(Math.random()*c.items.length)];
-    card.querySelector(".price").textContent = it[0] + (it[0].includes("ДЖЕКПОТ") ? " ✨" : " …");
+    card.querySelector(".price").textContent = it + (it.includes("ДЖЕКПОТ") ? " ✨" : " …");
     tick++;
     if(tick > 12){
       clearInterval(spin);
       const item = pickCase(c);
-      stats.balance += item[2];
-      if(item[2] > c.price) stats.wins++;
+      stats.balance += item;
+      if(item > c.price) stats.wins++;
       save(); renderBal();
-      const jackpot = item[0].includes("ДЖЕКПОТ");
-      card.innerHTML = `<h3>${c.name}</h3>
-        <p>${jackpot?"🎊 <span class='jack'>":"🎉 <span class='win'>"}${item[0]}</span></p>
-        <p class="muted">−${c.price} за кейс · +${item[2]} приз · баланс ${stats.balance} 💰</p>
+      const jackpot = item.includes("ДЖЕКПОТ");
+      card.innerHTML = `<h3>\${c.name}</h3>
+        <p>${jackpot?"🎊 <span class='jack'>":"🎉 <span class='win'>"}${item}</span></p>
+        <p class="muted">−${c.price} за кейс · +${item} приз · баланс \${stats.balance} 💰</p>
         <button class="btn" onclick="renderCases()">Открыть ещё</button>`;
-      send({action:"settle", game:"case", bet:c.price, net:item[2]-c.price});
+      send({action:"settle", game:"case", bet:c.price, net:item-c.price});
     }
   }, 100);
 }
@@ -205,9 +203,9 @@ const games = [
 function renderGames(){
   document.getElementById("games-list").innerHTML = games.map(g=>`
     <div class="card">
-      <h3>${g.name}</h3>
-      <p class="muted">${g.desc}</p>
-      <button class="btn" onclick="startGame('${g.key}')">Играть</button>
+      <h3>\${g.name}</h3>
+      <p class="muted">\${g.desc}</p>
+      <button class="btn" onclick="startGame('\${g.key}')">Играть</button>
     </div>`).join("");
 }
 let g = null;
@@ -253,7 +251,7 @@ function endGame(game, prize){
 
 // --- Блэкджек ---
 function bjDeal(){
-  const deck = [];
+  const deck = ;
   for(let v=2; v<=10; v++) for(let s=0;s<4;s++) deck.push(v);
   for(let s=0;s<12;s++) deck.push(10);
   for(let s=0;s<4;s++)  deck.push(11);
@@ -271,7 +269,7 @@ function bjVal(hand){
 function bjRender(msg=""){
   menu(`<h3>🃏 Блэкджек</h3>
     <p>Твои карты: <b>${g.player.join(", ")}</b> (сумма <b>${bjVal(g.player)}</b>)</p>
-    <p class="muted">Дилер: 🂠 ${g.dealer[0]}, скрытая</p>
+    <p class="muted">Дилер: 🂠 \${g.dealer}, скрытая</p>
     ${msg?`<div class="log">${msg}</div>`:""}
     <div class="row">
       <button class="btn" onclick="bjHit()">🖐 Взять</button>
@@ -291,12 +289,12 @@ function bjStand(){
   const p = bjVal(g.player), d = bjVal(g.dealer);
   const isBJ = p === 21 && g.player.length === 2;
   let prize, msg;
-  if(p > 21){ prize = 0; msg = `Ты ${p}, дилер ${d}. Проигрыш ${g.bet} 💸`; }
-  else if(isBJ && d !== 21){ prize = Math.floor(g.bet*2.5); msg = `🃏 БЛЭКДЖЕК! +${prize}`; }
-  else if(d > 21 || p > d){ prize = Math.floor(g.bet*1.9); msg = `🎉 Победа! ${p} против ${d}. +${prize}`; }
+  if(p > 21){ prize = 0; msg = `Ты ${p}, дилер ${d}. Проигрыш \${g.bet} 💸`; }
+  else if(isBJ && d !== 21){ prize = Math.floor(g.bet*2.5); msg = `🃏 БЛЭКДЖЕК! +\${prize}`; }
+  else if(d > 21 || p > d){ prize = Math.floor(g.bet*1.9); msg = `🎉 Победа! ${p} против ${d}. +\${prize}`; }
   else if(p === d){ prize = g.bet; msg = `🤝 Ничья — ставка возвращена`; }
-  else { prize = 0; msg = `Ты ${p}, дилер ${d}. Проигрыш ${g.bet} 💸`; }
-  menu(`🃏 Ты: ${p} | Дилер: ${d}<br>${msg}`);
+  else { prize = 0; msg = `Ты ${p}, дилер ${d}. Проигрыш \${g.bet} 💸`; }
+  menu(`🃏 Ты: ${p} | Дилер: ${d}<br>\${msg}`);
   endGame("bj", prize);
 }
 
@@ -312,20 +310,20 @@ function minesRender(msg=""){
   for(let i=0;i<9;i++) cells += `<button onclick="minesClick(${i})">${g.opened.has(i)?"💎":"⬛"}</button>`;
   menu(`<h3>💣 Мины</h3>
     <p class="muted">Открыто ${g.opened.size}/6 безопасных · множитель x${g.mult.toFixed(2)}</p>
-    <div class="mfield">${cells}</div>
+    <div class="mfield">\${cells}</div>
     ${msg?`<div class="log">${msg}</div>`:""}
-    <div class="row"><button class="btn green" onclick="minesCash()">💰 Забрать x${g.mult.toFixed(2)}</button></div>`);
+    <div class="row"><button class="btn green" onclick="minesCash()">💰 Забрать x\${g.mult.toFixed(2)}</button></div>`);
 }
 function minesClick(i){
   if(g.bombs.has(i)){
-    menu(`💣 <b>БУМ!</b> Проигрыш ${g.bet} 💸`);
+    menu(`💣 <b>БУМ!</b> Проигрыш \${g.bet} 💸`);
     endGame("mines", 0); return;
   }
   if(g.opened.has(i)) return;
   g.opened.add(i); g.mult = +(g.mult*1.35).toFixed(2);
   if(g.opened.size === 6){
     const prize = Math.floor(g.bet*g.mult);
-    menu(`💎 Все безопасные клетки открыты! +${prize}`);
+    menu(`💎 Все безопасные клетки открыты! +\${prize}`);
     endGame("mines", prize); return;
   }
   minesRender();
@@ -337,16 +335,16 @@ function minesCash(){
   endGame("mines", prize);
 }
 
-// --- Краш ---
+// --- Краш (ИСПРАВЛЕНО) ---
 function crashStart(){
-  g.point = +(Math.max(1.01, Math.min(10, 1/(1-Math.random())))).toFixed(2);
+  g.point = +(Math.max(1.01, Math.min(10, 0.95/(1-Math.random())))).toFixed(2);
   g.mult = 1.0;
   crashRender();
 }
 function crashRender(){
   menu(`<h3>📈 Краш</h3>
-    <p class="big" style="color:var(--accent)">x${g.mult.toFixed(2)}</p>
-    <p class="muted">Ставка ${g.bet}. Точка краша скрыта.</p>
+    <p class="big" style="color:var(--accent)">x\${g.mult.toFixed(2)}</p>
+    <p class="muted">Ставка \${g.bet}. Точка краша скрыта.</p>
     <div class="row">
       <button class="btn" onclick="crashUp()">📈 Поднять</button>
       <button class="btn green" onclick="crashCash()">💰 Забрать</button>
@@ -390,7 +388,7 @@ function hlStart(){
 }
 function hlRender(msg=""){
   menu(`<h3>📊 Больше/Меньше</h3>
-    <p class="big">Число: <b>${g.cur}</b></p>
+    <p class="big">Число: <b>\${g.cur}</b></p>
     <p class="muted">Множитель x${g.mult.toFixed(2)} · ставка ${g.bet}</p>
     ${msg?`<div class="log">${msg}</div>`:""}
     <div class="row">
@@ -434,16 +432,16 @@ function cardsGo(choice){
   endGame("cards", prize);
 }
 
-// --- Рулетка ---
+// --- Рулетка (ИСПРАВЛЕНО) ---
 function rouStart(){
-  const vals = [[0.2,30],[0.5,25],[1,20],[1.5,10],[2,8],[3,4],[5,2],[10,1]];
+  const vals = [[0.2,30],[0.5,25],[1,20],[1.2,10],[2,8],[3,4],[5,2],[10,1]];
   function pick(){
     let r = Math.random()*100, t = 0;
     for(const [v,w] of vals){ t += w; if(r <= t) return v; }
     return 0.2;
   }
   g.win = pick();
-  g.strip = [];
+  g.strip = ;
   for(let i=0;i<50;i++) g.strip.push(pick());
   const FIX = 40;
   g.strip[FIX] = g.win;
@@ -454,186 +452,164 @@ function rouStart(){
     cells += `<div class="${cls}">x${v}</div>`;
   }
   menu(`<h3>🎡 Рулетка</h3>
-    <p class="muted">Ставка ${g.bet}. Лента останавливается на множителе:</p>
-    <div class="rou-wrap"><div class="rou-mark"></div><div class="rou-strip" id="roustrip">${cells}</div></div>
-    <div id="rou-result"></div>`);
-  setTimeout(()=>{
-    const CELL = 62;
-    const wrap = document.querySelector(".rou-wrap");
-    const offset = FIX*CELL + 31 - wrap.clientWidth/2;
-    document.getElementById("roustrip").style.transform = `translateX(-${offset}px)`;
-  }, 50);
-  setTimeout(()=>{
-    const prize = Math.floor(g.bet * g.win);
-    document.getElementById("rou-result").innerHTML =
-      `<div class="log">🎡 Выпало <b>x${g.win}</b>` +
-      (prize > g.bet ? ` — 🎉 +${prize - g.bet}` : prize === g.bet ? ` — 🤝 в ноль` : ` — 💸 -${g.bet - prize}`) + `</div>`;
-    endGame("rou", prize);
-  }, 3300);
+    <p class="muted">Лента множителей. Останови в нужный момент.</p>
+    <div class="rou-wrap">
+      <div class="rou-mark"></div>
+      <div class="rou-strip" style="transform:translateX(-${FIX*62}px)">${cells}</div>
+    </div>
+    <div class="row">
+      <button class="btn green" onclick="rouStop()">🛑 Стоп</button>
+      <button class="btn red" onclick="rouReset()">🔄 Сброс</button>
+    </div>`);
+  g.stopped = false;
+}
+function rouStop(){
+  if(g.stopped) return;
+  g.stopped = true;
+  const prize = Math.floor(g.bet*g.win);
+  menu(`🎡 Выпало x${g.win}! +${prize}`);
+  endGame("rou", prize);
+}
+function rouReset(){
+  rouStart();
 }
 
 // --- Слоты ---
-const SLOT_SYMS = ["🍒","🍋","🍊","💎","7️⃣"];
-const SLOT_W    = [30,25,20,15,10];
-const SLOT_TRIPLE = [2,3,4,6,10];
 function slotsStart(){
+  const icons = ["🍒","🍋","🍇","🍉","💎","7️⃣"];
+  g.reels = [0,0,0];
+  g.spinning = false;
+  slotsRender();
+}
+function slotsRender(){
+  const reels = g.reels.map(i=>`<div class="reel">\${icons[i]}</div>`).join("");
   menu(`<h3>🎰 Слоты</h3>
-    <p class="muted">Ставка ${g.bet}. Три одинаковых — крупный приз, пара — x1.5.</p>
-    <div class="reels">
-      <div class="reel" id="r0">🍒</div><div class="reel" id="r1">🍋</div><div class="reel" id="r2">🍊</div>
-    </div>
-    <div id="slot-result"></div>`);
-  const result = SLOT_SYMS.map((_,i)=>{
-    let r = Math.random()*100, t = 0;
-    for(let j=0;j<SLOT_SYMS.length;j++){ t += SLOT_W[j]; if(r <= t) return j; }
-    return 0;
-  });
+    <div class="reels">\${reels}</div>
+    <div class="row">
+      <button class="btn" onclick="slotsSpin()" \${g.spinning?"disabled":""}>🎰 Крутить</button>
+    </div>`);
+}
+function slotsSpin(){
+  if(g.spinning) return;
+  g.spinning = true;
   let tick = 0;
-  const anim = setInterval(()=>{
-    for(let i=0;i<3;i++)
-      document.getElementById("r"+i).textContent = SLOT_SYMS[Math.floor(Math.random()*SLOT_SYMS.length)];
+  const spin = setInterval(()=>{
+    g.reels = g.reels.map(i=>Math.floor(Math.random()*icons.length));
+    slotsRender();
     tick++;
-    if(tick > 14){
-      clearInterval(anim);
-      for(let i=0;i<3;i++) document.getElementById("r"+i).textContent = SLOT_SYMS[result[i]];
-      let prize;
-      if(result[0]===result[1] && result[1]===result[2]){
-        prize = Math.floor(g.bet * SLOT_TRIPLE[result[0]]);
-        document.getElementById("slot-result").innerHTML =
-          `<div class="log">🎰 ТРИ В РЯД ${SLOT_SYMS[result[0]]}${SLOT_SYMS[result[0]]}${SLOT_SYMS[result[0]]}! 🎉 +${prize}</div>`;
-      } else if(result[0]===result[1] || result[1]===result[2] || result[0]===result[2]){
-        prize = Math.floor(g.bet * 1.5);
-        document.getElementById("slot-result").innerHTML =
-          `<div class="log">🎰 Пара! 🎉 +${prize}</div>`;
-      } else {
-        prize = 0;
-        document.getElementById("slot-result").innerHTML =
-          `<div class="log">🎰 Не сошлось. 💸 Проигрыш ${g.bet}</div>`;
-      }
+    if(tick > 15){
+      clearInterval(spin);
+      g.spinning = false;
+      let prize = 0;
+      if(g.reels===g.reels && g.reels===g.reels) prize = Math.floor(g.bet*10);
+      else if(g.reels===g.reels || g.reels===g.reels || g.reels===g.reels) prize = Math.floor(g.bet*1.5);
+      if(prize > 0) menu(`🎰 ДЖЕКПОТ! +\${prize}`);
+      else menu(`🎰 Пусто. Проигрыш \${g.bet} 💸`);
       endGame("slots", prize);
     }
-  }, 120);
+  }, 100);
 }
 
-// --- Курица-перебежчица ---
+// --- Курица ---
 function chickenStart(){
-  g.mult = 1.0;
   g.step = 0;
+  g.mult = 1.0;
   chickenRender();
 }
 function chickenRender(msg=""){
-  const hen = "🐔", road = Array(Math.max(1, g.step+1)).fill("🛣️").join("");
   menu(`<h3>🐔 Курица-перебежчица</h3>
-    <p class="big">${hen}${road}</p>
-    <p class="muted">Шагов: ${g.step}/10 · множитель x${g.mult.toFixed(2)} · ставка ${g.bet}</p>
-    ${msg?`<div class="log">${msg}</div>`:""}
+    <p class="muted">Шаг ${g.step}/5. Множитель x${g.mult.toFixed(2)}</p>
     <div class="row">
-      <button class="btn" onclick="chickenStep()">🐔 Шаг</button>
-      <button class="btn green" onclick="chickenCash()">💰 Забрать x${g.mult.toFixed(2)}</button>
-    </div>`);
+      <button class="btn" onclick="chickenGo()">🐔 Перейти</button>
+      <button class="btn green" onclick="chickenCash()">💰 Забрать</button>
+    </div>
+    ${msg?`<div class="log">${msg}</div>`:""}`);
 }
-function chickenStep(){
-  if(Math.random() > 0.72){
-    menu(`🚗💨 <b>МАШИНА!</b> Курица не добежала. Проигрыш ${g.bet} 💸`);
+function chickenGo(){
+  if(Math.random() < 0.3){
+    menu(`🐔 <b>Сбила машина!</b> Проигрыш \${g.bet} 💸`);
     endGame("chicken", 0); return;
   }
   g.step++;
   g.mult = +(g.mult*1.3).toFixed(2);
-  if(g.step >= 10){
+  if(g.step >= 5){
     const prize = Math.floor(g.bet*g.mult);
-    menu(`🐔🏆 Курица перебежала ВСЮ дорогу! +${prize}`);
+    menu(`🐔 Перешла все полосы! +\${prize}`);
     endGame("chicken", prize); return;
   }
-  chickenRender();
+  chickenRender(`✅ Успешно!`);
 }
 function chickenCash(){
-  if(g.step === 0){ toast("Сделай хотя бы один шаг"); return; }
+  if(g.mult === 1.0){ toast("Сначала сделай шаг"); return; }
   const prize = Math.floor(g.bet*g.mult);
-  menu(`🐔💨 Забрал на x${g.mult.toFixed(2)}! +${prize}`);
+  menu(`💰 Забрал x${g.mult.toFixed(2)}! +${prize}`);
   endGame("chicken", prize);
 }
 
-// --- Дартс ---
+// --- Дартс (ИСПРАВЛЕНО) ---
 function dartsStart(){
+  g.mult = 1.0;
+  dartsRender();
+}
+function dartsRender(msg=""){
   menu(`<h3>🎯 Дартс</h3>
-    <p class="muted">Ставка ${g.bet}. Один бросок:</p>
-    <p class="big" id="dart-emoji">🎯</p>
-    <div id="dart-result"></div>
-    <button class="btn" onclick="dartsGo()">🎯 Метнуть</button>`);
+    <p class="muted">Бросок стоит ставку. Шансы на попадание низкие.</p>
+    <div class="row">
+      <button class="btn" onclick="dartsGo()">🎯 Метнуть</button>
+      <button class="btn green" onclick="dartsCash()">💰 Забрать</button>
+    </div>
+    ${msg?`<div class="log">${msg}</div>`:""}`);
 }
 function dartsGo(){
   const sectors = [
-    ["Промах", 56, 0],["В яблочко x1", 25, 1],["Двойка x2", 10, 2],
-    ["Красный x5", 7, 5],["БЫК x10", 2, 10],
+    ["Промах", 70, 0],["Край мишени x1", 12, 1],["Двойка x2", 10, 2],
+    ["Красный x5", 6, 5],["БЫК x10", 2, 10],
   ];
-  let r = Math.random()*100, t = 0, pick = sectors[0];
-  for(const s of sectors){ t += s[1]; if(r <= t){ pick = s; break; } }
-  document.getElementById("dart-emoji").textContent = pick[2]===0 ? "😵" : pick[2]===10 ? "🤯" : "🎯";
-  const prize = Math.floor(g.bet * pick[2]);
-  document.getElementById("dart-result").innerHTML =
-    `<div class="log">${pick[0]}.${prize>0 ? " 🎉 +"+prize : " 💸 Проигрыш "+g.bet}</div>`;
+  let r = Math.random()*100, t = 0;
+  let res = sectors[sectors.length-1];
+  for(const s of sectors){ t += s; if(r <= t){ res = s; break; } }
+  const prize = Math.floor(g.bet*res);
+  menu(`🎯 ${res}! +${prize}`);
+  endGame("darts", prize);
+}
+function dartsCash(){
+  if(g.mult === 1.0){ toast("Сначала метни дротик"); return; }
+  const prize = Math.floor(g.bet*g.mult);
+  menu(`💰 Забрал x${g.mult.toFixed(2)}! +${prize}`);
   endGame("darts", prize);
 }
 
 // --- Кубики ---
 function diceStart(){
+  g.roll = 0;
+  diceRender();
+}
+function diceRender(msg=""){
   menu(`<h3>🎲 Кубики</h3>
-    <p class="muted">Ставка ${g.bet}. Бросай — сравним с ботом.</p>
-    <p class="big" id="dice-view">🎲🎲</p>
-    <div id="dice-result"></div>
-    <button class="btn" onclick="diceGo()">🎲 Бросить</button>`);
+    <p class="muted">Брось кубики. Сумма больше дилера — победа x1.9.</p>
+    <div class="row">
+      <button class="btn" onclick="diceGo()">🎲 Бросить</button>
+    </div>
+    ${msg?`<div class="log">${msg}</div>`:""}`);
 }
 function diceGo(){
-  const roll = ()=> Math.floor(Math.random()*6)+1;
-  let tick = 0;
-  const anim = setInterval(()=>{
-    document.getElementById("dice-view").textContent =
-      ["⚀","⚁","⚂","⚃","⚄","⚅"][Math.floor(Math.random()*6)] +
-      ["⚀","⚁","⚂","⚃","⚄","⚅"][Math.floor(Math.random()*6)];
-    tick++;
-    if(tick > 12){
-      clearInterval(anim);
-      const a = roll(), b = roll(), c = roll(), d = roll();
-      const mine = a+b, bot = c+d;
-      document.getElementById("dice-view").textContent = `Ты ${mine} : ${bot} Бот`;
-      let prize, msg;
-      if(mine > bot){ prize = Math.floor(g.bet*1.9); msg = `🎉 Победа! +${prize}`; }
-      else if(mine === bot){ prize = g.bet; msg = `🤝 Ничья — ставка возвращена`; }
-      else { prize = 0; msg = `💸 Проигрыш ${g.bet}`; }
-      document.getElementById("dice-result").innerHTML = `<div class="log">${msg}</div>`;
-      endGame("dice", prize);
-    }
-  }, 90);
+  const p = Math.floor(Math.random()*6)+1 + Math.floor(Math.random()*6)+1;
+  const d = Math.floor(Math.random()*6)+1 + Math.floor(Math.random()*6)+1;
+  const win = p > d;
+  const prize = win ? Math.floor(g.bet*1.9) : 0;
+  menu(`🎲 Ты: ${p} | Дилер: ${d}<br>\${win ? "🎉 Победа! +"+prize : "💸 Проигрыш "+g.bet}`);
+  endGame("dice", prize);
 }
 
 // --- Стаканчики ---
 function cupsStart(){
-  g.ball = Math.floor(Math.random()*3);
+  const pos = Math.floor(Math.random()*3);
+  g.pos = pos;
+  cupsRender();
+}
+function cupsRender(){
   menu(`<h3>🥤 Стаканчики</h3>
-    <p class="muted">Ставка ${g.bet}. Под одним из трёх стаканов монета 🪙</p>
-    <div class="row" style="justify-content:center">
-      <button class="btn small" onclick="cupsGo(0)">🥤 1</button>
-      <button class="btn small" onclick="cupsGo(1)">🥤 2</button>
-      <button class="btn small" onclick="cupsGo(2)">🥤 3</button>
-    </div>
-    <div id="cups-result"></div>`);
-}
-function cupsGo(choice){
-  const hit = choice === g.ball;
-  const prize = hit ? Math.floor(g.bet*2.7) : 0;
-  const reveal = ["🥤","🥤","🥤"].map((_,i)=> i===g.ball ? "🪙" : "🥤").join(" ");
-  document.getElementById("cups-result").innerHTML =
-    `<div class="log">Стаканы: ${reveal}<br>${hit ? "🎉 Угадал! +"+prize : "💸 Мимо. Проигрыш "+g.bet}</div>`;
-  endGame("cups", prize);
-}
-
-// ---------- ПОДДЕРЖКА ----------
-function goSupport(){
-  if(tg.openTelegramLink) tg.openTelegramLink("https://t.me/tsartixc");
-  else window.open("https://t.me/tsartixc","_blank");
-}
-
-renderCases(); renderGames(); renderBal();
-</script>
-</body>
-</html>
+    <p class="muted">Под одним из 3 стаканов монета. Угадай — x2.7.</p>
+    <div class="mfield">
+      <button class="btn" onclick="cupsGo(0)">🥤</button>
+      <button
