@@ -1,1 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Duck Case</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root{--bg:#0f0f13;--card:#1b1b22;--primary:#6c5ce7;--accent:#00d1a0;--text:#fff;--sec:#9a9aa8;--border:#2a2a33;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',Roboto,sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+    .header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;background:var(--card);border-bottom:1px solid var(--border);}
+    .header h1{font-size:17px;}
+    .balance{display:flex;align-items:center;gap:6px;font-weight:700;font-size:16px;}
+    .coin{width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,#ffd66b,#f5a623);}
+    .content{flex:1;overflow-y:auto;padding:16px;padding-bottom:70px;}
+    .tab{display:none;}
+    .tab.active{display:block;}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;}
+    .card h3{margin-bottom:6px;}
+    .price{color:var(--accent);font-weight:700;}
+    .btn{display:block;width:100%;padding:10px;border:none;border-radius:10px;background:var(--primary);color:#fff;font-weight:700;font-size:14px;cursor:pointer;margin-top:10px;}
+    .nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--border);padding:6px 0 10px;}
+    .nav button{flex:1;background:none;border:none;color:var(--sec);font-size:11px;padding:6px 0;cursor:pointer;}
+    .nav button span{display:block;font-size:18px;margin-bottom:3px;}
+    .nav button.active{color:var(--primary);font-weight:700;}
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Duck Case</h1>
+    <div class="balance"><div class="coin"></div><span id="balance">0</span></div>
+  </div>
+  <div class="content">
+    <div class="tab active" id="tab-cases">
+      <div class="card">
+        <h3>🦆 Duck Case</h3>
+        <p class="price">100 монет</p>
+        <button class="btn" onclick="buy('duck')">Открыть</button>
+      </div>
+      <div class="card">
+        <h3>👑 Golden Case</h3>
+        <p class="price">500 монет</p>
+        <button class="btn" onclick="buy('golden')">Открыть</button>
+      </div>
+    </div>
+    <div class="tab" id="tab-games">
+      <div class="card">
+        <h3>🎮 Мини-игры</h3>
+        <p>Скоро появятся: «Угадай число», «Кликер», «Рулетка».</p>
+      </div>
+      <div class="card">
+        <h3>🤝 Пригласить друга</h3>
+        <p>Получи бонус, когда твой друг откроет первый кейс.</p>
+        <button class="btn" onclick="invite()">Пригласить друга</button>
+      </div>
+    </div>
+    <div class="tab" id="tab-profile">
+      <div class="card">
+        <h3>👤 Профиль</h3>
+        <p>Баланс: <b id="p-balance">0</b> монет</p>
+        <p>Открыто кейсов: <b id="p-opened">0</b></p>
+      </div>
+    </div>
+    <div class="tab" id="tab-top">
+      <div class="card">
+        <h3>🏆 Топ игроков</h3>
+        <p>Скоро здесь появится рейтинг игроков.</p>
+      </div>
+    </div>
+  </div>
+  <div class="nav">
+    <button data-tab="cases" class="active"><span>🎁</span>Кейсы</button>
+    <button data-tab="games"><span>🎮</span>Игры</button>
+    <button data-tab="profile"><span>👤</span>Профиль</button>
+    <button data-tab="top"><span>🏆</span>Топ</button>
+  </div>
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready(); tg.expand();
+    let balance = 500;
+    function show(tab){
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      document.getElementById('tab-'+tab).classList.add('active');
+      document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+    }
+    document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>show(b.dataset.tab));
+    function updateBal(){
+      document.getElementById('balance').textContent = balance;
+      document.getElementById('p-balance').textContent = balance;
+    }
+    function buy(caseKey){
+      tg.sendData(JSON.stringify({action:'buy_case', case:caseKey}));
+    }
+    function invite(){
+      tg.sendData(JSON.stringify({action:'invite_friend'}));
+    }
+    updateBal();
+  </script>
+</body>
+</html>
 
