@@ -27,13 +27,24 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI'
 .row .btn{margin-top:0;}
 input.inp{width:100%;padding:10px;border:1px solid var(--border);border-radius:10px;background:#12121a;color:#fff;font-size:14px;margin-top:10px;}
 .muted{color:var(--sec);font-size:13px;}
-.log{margin-top:10px;padding:10px;border-radius:10px;background:#12121a;font-size:14px;white-space:pre-wrap;}
+.log{margin-top:10px;padding:10px;border-radius:10px;background:#12121a;font-size:14px;}
+.jack{color:#ffd66b;font-weight:800;}
+.win{color:var(--accent);font-weight:800;}
 .nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--border);padding:6px 0 12px;}
 .nav button{flex:1;background:none;border:none;color:var(--sec);font-size:11px;padding:6px 0;cursor:pointer;}
 .nav button span{display:block;font-size:18px;margin-bottom:3px;}
 .nav button.active{color:var(--primary);font-weight:700;}
 .mfield{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
 .mfield button{height:52px;font-size:20px;border:none;border-radius:10px;background:#12121a;color:#fff;cursor:pointer;}
+/* рулетка */
+.rou-wrap{position:relative;overflow:hidden;border-radius:10px;background:#12121a;margin-top:10px;height:56px;}
+.rou-mark{position:absolute;left:50%;top:0;bottom:0;width:2px;background:var(--accent);z-index:2;transform:translateX(-50%);}
+.rou-strip{display:flex;gap:2px;padding-left:100px;transition:transform 3s cubic-bezier(.1,.7,.2,1);}
+.cell{flex:0 0 60px;height:56px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;border-radius:6px;}
+.cell.gold{background:#f5a623;color:#241a02;}
+.cell.green{background:#00b894;color:#04241c;}
+.cell.blue{background:#3b4a8c;}
+.cell.dim{background:#2a2a33;color:#777;}
 </style>
 </head>
 <body>
@@ -45,13 +56,12 @@ input.inp{width:100%;padding:10px;border:1px solid var(--border);border-radius:1
 
   <div class="tab active" id="tab-cases">
     <div id="cases-list"></div>
-    <p class="muted">Результат кейса определяет бот — он придёт сообщением в чат.</p>
   </div>
 
   <div class="tab" id="tab-games">
     <div class="card" id="game-menu">
       <h3>🎮 Мини-игры</h3>
-      <p class="muted">Ставка от 10 монет. Результат уйдёт боту и он подтвердит баланс.</p>
+      <p class="muted">Ставка от 10 монет. Всё считается прямо здесь.</p>
       <div class="row">
         <button class="btn small" onclick="startGame('bj')">🃏 Блэкджек</button>
         <button class="btn small" onclick="startGame('mines')">💣 Мины</button>
@@ -59,6 +69,7 @@ input.inp{width:100%;padding:10px;border:1px solid var(--border);border-radius:1
         <button class="btn small" onclick="startGame('flip')">🪙 Орёл/Решка</button>
         <button class="btn small" onclick="startGame('hl')">📊 Больше/Меньше</button>
         <button class="btn small" onclick="startGame('cards')">🂠 Карты</button>
+        <button class="btn small" onclick="startGame('rou')">🎡 Рулетка</button>
       </div>
     </div>
     <div class="card" id="game-area" style="display:none">
@@ -70,15 +81,15 @@ input.inp{width:100%;padding:10px;border:1px solid var(--border);border-radius:1
   <div class="tab" id="tab-profile">
     <div class="card">
       <h3>👤 Профиль</h3>
-      <p>Баланс: <b id="p-balance">0</b> монет <span class="muted">(точный — в чате у бота)</span></p>
+      <p>Баланс: <b id="p-balance">0</b> монет</p>
       <p>Кейсов открыто: <b id="p-opened">0</b></p>
       <p>Побед в играх: <b id="p-wins">0</b></p>
     </div>
     <div class="card">
       <h3>🛠 Админ</h3>
-      <p class="muted">Начисление монет — через команды в чате бота:<br>
+      <p class="muted">Начисление — командами в чате бота:<br>
       <b>/add 1000</b> — себе<br>
-      <b>/gift @username 500</b> — игроку<br>
+      <b>/gift @username 500</b — игроку><br>
       <b>/profile</b> — точный баланс</p>
     </div>
   </div>
@@ -105,15 +116,13 @@ const tg = window.Telegram.WebApp;
 tg.ready(); tg.expand();
 
 const START_BALANCE = 300;
-
-// Баланс приходит от бота в ссылке (?...&b=XXXX) — это главный источник правды
 let stats = JSON.parse(localStorage.getItem("duck_stats") || "null")
   || {balance: START_BALANCE, opened: 0, wins: 0};
+
+// Баланс от бота приходит в ссылке (&b=XXXX) — это главный источник
 const q = new URLSearchParams(location.search);
-if (q.has("b")) {
-  const b = parseInt(q.get("b"));
-  if (!isNaN(b)) { stats.balance = b; }
-}
+if (q.has("b")) { const b = parseInt(q.get("b")); if (!isNaN(b)) stats.balance = b; }
+
 function save(){ localStorage.setItem("duck_stats", JSON.stringify(stats)); }
 function renderBal(){
   document.getElementById("balance").textContent = stats.balance;
@@ -121,7 +130,7 @@ function renderBal(){
   document.getElementById("p-opened").textContent = stats.opened;
   document.getElementById("p-wins").textContent = stats.wins;
 }
-function send(data){ tg.sendData(JSON.stringify(data)); }
+function send(data){ try{ tg.sendData(JSON.stringify(data)); }catch(e){} }
 function toast(text){ tg.showAlert ? tg.showAlert(text) : alert(text); }
 
 function show(tab){
@@ -131,32 +140,61 @@ function show(tab){
 }
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>show(b.dataset.tab));
 
-// ---------- КЕЙСЫ (6 штук) ----------
+// ---------- КЕЙСЫ (без пустышек, ролл здесь же в окне) ----------
 const cases = [
   {key:"lucky",  name:"🍀 Lucky Case",  price:50,
-   items:[["Пустышка",60,0],["30 монет",25,30],["80 монет",12,80],["ДЖЕКПОТ 500",3,500]]},
+   items:[["20 монет",60,20],["60 монет",30,60],["ДЖЕКПОТ 500",10,500]]},
   {key:"duck",   name:"🦆 Duck Case",   price:100,
-   items:[["Пустышка",40,0],["50 монет",35,50],["150 монет",20,150],["ДЖЕКПОТ 1000",5,1000]]},
+   items:[["40 монет",55,40],["150 монет",35,150],["ДЖЕКПОТ 1000",10,1000]]},
   {key:"golden", name:"👑 Golden Case", price:300,
-   items:[["Пустышка",45,0],["150 монет",30,150],["600 монет",20,600],["ДЖЕКПОТ 3000",5,3000]]},
+   items:[["100 монет",55,100],["400 монет",35,400],["ДЖЕКПОТ 3000",10,3000]]},
   {key:"ruby",   name:"💎 Ruby Case",   price:700,
-   items:[["Пустышка",50,0],["400 монет",28,400],["1500 монет",17,1500],["ДЖЕКПОТ 7000",5,7000]]},
+   items:[["250 монет",55,250],["900 монет",35,900],["ДЖЕКПОТ 7000",10,7000]]},
   {key:"ghost",  name:"👻 Ghost Case",  price:1500,
-   items:[["Пустышка",55,0],["800 монет",25,800],["3500 монет",16,3500],["ДЖЕКПОТ 15000",4,15000]]},
+   items:[["500 монет",55,500],["2000 монет",35,2000],["ДЖЕКПОТ 15000",10,15000]]},
   {key:"dragon", name:"🐲 Dragon Case", price:3000,
-   items:[["Пустышка",58,0],["1500 монет",25,1500],["7000 монет",14,7000],["ДЖЕКПОТ 30000",3,30000]]},
+   items:[["1000 монет",55,1000],["4000 монет",35,4000],["ДЖЕКПОТ 30000",10,30000]]},
 ];
 function renderCases(){
   document.getElementById("cases-list").innerHTML = cases.map((c,i)=>`
-    <div class="card"><h3>${c.name}</h3><p class="price">${c.price} монет</p>
-    <p class="muted">Шансы: ${c.items.map(it=>it[0]+" "+it[1]+"%").join(", ")}</p>
-    <button class="btn" onclick="buyCase(${i})">Открыть</button></div>`).join("");
+    <div class="card" id="case-${i}">
+      <h3>${c.name}</h3><p class="price">${c.price} монет</p>
+      <p class="muted">Шансы: ${c.items.map(it=>it[0]+" "+it[1]+"%").join(", ")}</p>
+      <button class="btn" onclick="buyCase(${i})">Открыть</button>
+    </div>`).join("");
+}
+function pickCase(c){
+  let r = Math.random()*100, t = 0;
+  for(const it of c.items){ t += it[1]; if(r <= t) return it; }
+  return c.items[c.items.length-1];
 }
 function buyCase(i){
   const c = cases[i];
-  if(stats.balance < c.price){ toast(`Не хватает монет: нужно ${c.price}`); return; }
-  stats.balance -= c.price; stats.opened++; save(); renderBal();
-  send({action:"case", key:c.key}); // бот откроет и пришлёт результат в чат
+  if(stats.balance < c.price){ toast(`Не хватает монет: нужно ${c.price}, у тебя ${stats.balance}`); return; }
+  const card = document.getElementById("case-"+i);
+  card.querySelector("button").disabled = true;
+  // «Прокрутка» — мигаем случайными призами
+  let tick = 0;
+  const spin = setInterval(()=>{
+    const it = c.items[Math.floor(Math.random()*c.items.length)];
+    card.querySelector(".price").textContent = it[0] + (it[0].includes("ДЖЕКПОТ") ? " ✨" : " …");
+    tick++;
+    if(tick > 12){
+      clearInterval(spin);
+      const item = pickCase(c);
+      stats.balance += item[2];
+      if(item[2] > c.price) stats.wins++;
+      stats.opened++;
+      save(); renderBal();
+      const jackpot = item[0].includes("ДЖЕКПОТ");
+      card.innerHTML = `<h3>${c.name}</h3>
+        <p>${jackpot?"🎊 <span class='jack'>":"🎉 <span class='win'>"}${item[0]}</span></p>
+        <p class="muted">${item[2] >= c.price ? "+"+(item[2]-c.price)+" к ставке" : "минус "+(c.price-item[2])} · баланс ${stats.balance} 💰</p>
+        <button class="btn" onclick="renderCases();buyCase(${i})">Открыть ещё раз</button>`;
+      // подтверждаем боту: ставка = цена кейса, net = приз - цена
+      send({action:"settle", game:"case", bet:c.price, net:item[2]-c.price});
+    }
+  }, 100);
 }
 
 // ---------- ОБЩЕЕ ДЛЯ ИГР ----------
@@ -165,16 +203,13 @@ function startGame(type){
   document.getElementById("game-menu").style.display="none";
   document.getElementById("game-area").style.display="block";
   g = {type};
-  if(type==="bj") menu(`
-    <h3>🃏 Блэкджек</h3><p class="muted">Набери 21 или больше дилера. Блэкджек x2.5, победа x1.9.</p>`);
-  if(type==="mines") menu(`
-    <h3>💣 Мины</h3><p class="muted">Поле 3×3, 3 мины. Каждый безопасный клик +35%.</p>`);
-  if(type==="crash") menu(`
-    <h3>📈 Краш</h3><p class="muted">Множитель растёт по +25%, но может крашнуться.</p>`);
+  if(type==="bj") menu(`<h3>🃏 Блэкджек</h3><p class="muted">Набери 21 или больше дилера. Блэкджек x2.5, победа x1.9.</p>`);
+  if(type==="mines") menu(`<h3>💣 Мины</h3><p class="muted">Поле 3×3, 3 мины. Каждый безопасный клик +35%.</p>`);
+  if(type==="crash") menu(`<h3>📈 Краш</h3><p class="muted">Множитель растёт по +25%, но может крашнуться.</p>`);
   if(type==="flip") menu(`<h3>🪙 Орёл или решка</h3><p class="muted">Угадал — x1.9.</p>`);
-  if(type==="hl") menu(`
-    <h3>📊 Больше/Меньше</h3><p class="muted">Следующее число больше или меньше? x1.9 за попытку, можно копить.</p>`);
+  if(type==="hl") menu(`<h3>📊 Больше/Меньше</h3><p class="muted">Следующее число больше или меньше? x1.9 за попытку.</p>`);
   if(type==="cards") menu(`<h3>🂠 Карты</h3><p class="muted">Угадай цвет карты — x1.95.</p>`);
+  if(type==="rou") menu(`<h3>🎡 Рулетка</h3><p class="muted">Крути ленту — выпадет множитель от x0.2 до x10.</p>`);
   askBet();
 }
 function menu(html){ document.getElementById("game-body").innerHTML = html; }
@@ -200,15 +235,13 @@ function placeBet(){
   else if(g.type==="flip") flipUI();
   else if(g.type==="hl") hlStart();
   else if(g.type==="cards") cardsUI();
+  else if(g.type==="rou") rouStart();
 }
-// Итог игры: prize — выплата (0 = проигрыш, bet = возврат при ничьей).
-// Локально начисляем выплату, боту отправляем чистый результат (prize - bet).
 function endGame(game, prize){
   const bet = g.bet || 0;
   stats.balance += prize;
   if(prize > bet) stats.wins++;
   save(); renderBal();
-  const final = document.getElementById("game-body").innerHTML;
   send({action:"settle", game, bet, net: prize - bet});
 }
 
@@ -216,8 +249,8 @@ function endGame(game, prize){
 function bjDeal(){
   const deck = [];
   for(let v=2; v<=10; v++) for(let s=0;s<4;s++) deck.push(v);
-  for(let s=0;s<12;s++) deck.push(10); // J, Q, K
-  for(let s=0;s<4;s++)  deck.push(11); // A
+  for(let s=0;s<12;s++) deck.push(10);
+  for(let s=0;s<4;s++)  deck.push(11);
   for(let i=deck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [deck[i],deck[j]]=[deck[j],deck[i]]; }
   g.deck = deck;
   g.player = [deck.pop(), deck.pop()];
@@ -393,6 +426,44 @@ function cardsGo(choice){
   const laid = res === "red" ? "🔴 Красная" : "⚫ Чёрная";
   menu(`Лежала: ${laid}.<br>${prize>0 ? "🎉 +"+prize : "💸 Проигрыш "+g.bet}`);
   endGame("cards", prize);
+}
+
+// --- Рулетка ---
+function rouStart(){
+  const vals = [[0.2,30],[0.5,25],[1,20],[1.5,10],[2,8],[3,4],[5,2],[10,1]];
+  function pick(){
+    let r = Math.random()*100, t = 0;
+    for(const [v,w] of vals){ t += w; if(r <= t) return v; }
+    return 0.2;
+  }
+  g.win = pick();
+  g.strip = [];
+  for(let i=0;i<50;i++) g.strip.push(pick());
+  const FIX = 40;
+  g.strip[FIX] = g.win;
+  let cells = "";
+  for(let i=0;i<g.strip.length;i++){
+    const v = g.strip[i];
+    const cls = v>=5?"cell gold":v>=2?"cell green":v>=1?"cell blue":"cell dim";
+    cells += `<div class="${cls}">x${v}</div>`;
+  }
+  menu(`<h3>🎡 Рулетка</h3>
+    <p class="muted">Ставка ${g.bet}. Лента останавливается на множителе:</p>
+    <div class="rou-wrap"><div class="rou-mark"></div><div class="rou-strip" id="roustrip">${cells}</div></div>
+    <div id="rou-result"></div>`);
+  setTimeout(()=>{
+    const CELL = 62;
+    const wrap = document.querySelector(".rou-wrap");
+    const offset = FIX*CELL + 31 - wrap.clientWidth/2;
+    document.getElementById("roustrip").style.transform = `translateX(-${offset}px)`;
+  }, 50);
+  setTimeout(()=>{
+    const prize = Math.floor(g.bet * g.win);
+    document.getElementById("rou-result").innerHTML =
+      `<div class="log">🎡 Выпало <b>x${g.win}</b>` +
+      (prize > g.bet ? ` — 🎉 +${prize - g.bet}` : prize === g.bet ? ` — 🤝 в ноль` : ` — 💸 -${g.bet - prize}`) + `</div>`;
+    endGame("rou", prize);
+  }, 3300);
 }
 
 // ---------- ПОДДЕРЖКА ----------
