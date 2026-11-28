@@ -47,6 +47,9 @@ input.inp{width:100%;padding:10px;border:1px solid var(--border);border-radius:1
 .reels{display:flex;gap:8px;justify-content:center;margin-top:12px;}
 .reel{flex:1;max-width:80px;height:70px;background:#12121a;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:32px;}
 .big{text-align:center;font-size:24px;font-weight:800;margin-top:10px;}
+.case-img{width:100%;height:90px;object-fit:cover;border-radius:10px;margin-bottom:8px;display:block;}
+.case-fb{height:90px;display:flex;align-items:center;justify-content:center;font-size:56px;margin-bottom:8px;}
+.gift-item{display:flex;justify-content:space-between;padding:8px 4px;border-bottom:1px solid var(--border);font-size:14px;}
 </style>
 </head>
 <body>
@@ -68,6 +71,13 @@ input.inp{width:100%;padding:10px;border:1px solid var(--border);border-radius:1
     </div>
   </div>
 
+  <div class="tab" id="tab-gifts">
+    <div class="card">
+      <h3>🎁 Твоя коллекция</h3>
+      <div id="gifts-list"></div>
+    </div>
+  </div>
+
   <div class="tab" id="tab-profile">
     <div class="card">
       <h3>👤 Профиль</h3>
@@ -76,11 +86,13 @@ input.inp{width:100%;padding:10px;border:1px solid var(--border);border-radius:1
       <p>Побед в играх: <b id="p-wins">0</b></p>
     </div>
     <div class="card">
-      <h3>🛠 Админ</h3>
-      <p class="muted">Начисление — командами в чате бота:<br>
-      <b>/add 1000</b> — себе<br>
-      <b>/gift @username 500</b> — игроку<br>
-      <b>/profile</b> — точный баланс</p>
+      <h3>🛠 Команды</h3>
+      <p class="muted">
+      <b>/bonus</b> — +100 монет раз в 12 часов<br>
+      <b>/top</b> — топ игроков<br>
+      <b>/profile</b> — точный баланс<br>
+      <b>/add 1000</b> — админ: себе<br>
+      <b>/gift @username 500</b> — админ: игроку</p>
     </div>
   </div>
 
@@ -97,8 +109,9 @@ input.inp{width:100%;padding:10px;border:1px solid var(--border);border-radius:1
 <div class="nav">
   <button data-tab="cases" class="active"><span>🎁</span>Кейсы</button>
   <button data-tab="games"><span>🎮</span>Игры</button>
+  <button data-tab="gifts"><span>🏆</span>Подарки</button>
   <button data-tab="profile"><span>👤</span>Профиль</button>
-  <button data-tab="support"><span>💬</span>Поддержка</button>
+  <button data-tab="support"><span>💬</span>Помощь</button>
 </div>
 
 <script>
@@ -107,7 +120,8 @@ tg.ready(); tg.expand();
 
 const START_BALANCE = 300;
 let stats = JSON.parse(localStorage.getItem("duck_stats") || "null")
-  || {balance: START_BALANCE, opened: 0, wins: 0};
+  || {balance: START_BALANCE, opened: 0, wins: 0, gifts: {}};
+if(!stats.gifts) stats.gifts = {};
 
 const q = new URLSearchParams(location.search);
 if (q.has("b")) { const b = parseInt(q.get("b")); if (!isNaN(b)) stats.balance = b; }
@@ -126,29 +140,46 @@ function show(tab){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('tab-'+tab).classList.add('active');
   document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  if(tab==="gifts") renderGifts();
 }
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>show(b.dataset.tab));
 
-// ---------- КЕЙСЫ (шансы ужесточены, возврат ~90%) ----------
+// ---------- КЕЙСЫ ----------
 const cases = [
-  {key:"lucky",  name:"🍀 Lucky Case",  price:50,
-   items:[["15 монет",60,15],["40 монет",30,40],["ДЖЕКПОТ 250",10,250]]},
-  {key:"duck",   name:"🦆 Duck Case",   price:100,
-   items:[["30 монет",55,30],["100 монет",35,100],["ДЖЕКПОТ 400",10,400]]},
-  {key:"golden", name:"👑 Golden Case", price:300,
-   items:[["80 монет",55,80],["300 монет",35,300],["ДЖЕКПОТ 1200",10,1200]]},
-  {key:"ruby",   name:"💎 Ruby Case",   price:700,
-   items:[["220 монет",55,220],["700 монет",35,700],["ДЖЕКПОТ 2800",10,2800]]},
-  {key:"ghost",  name:"👻 Ghost Case",  price:1500,
-   items:[["450 монет",55,450],["1600 монет",35,1600],["ДЖЕКПОТ 6000",10,6000]]},
-  {key:"dragon", name:"🐲 Dragon Case", price:3000,
-   items:[["900 монет",55,900],["3200 монет",35,3200],["ДЖЕКПОТ 12000",10,12000]]},
+  {key:"lucky",  name:"🍀 Lucky Case",  price:50,  emoji:"🎁", img:"images/lucky.png",
+   items:[["15 монет",60,15],["40 монет",30,40],["ДЖЕКПОТ 250",10,250]],
+   gifts:[["🌹 Розочка",40],["🧸 Мишка",35],["🎂 Торт",15],["🏆 Кубок",8],["🚀 Ракета",2]]},
+  {key:"duck",   name:"🦆 Duck Case",   price:100, emoji:"🦆", img:"images/duck.png",
+   items:[["30 монет",55,30],["100 монет",35,100],["ДЖЕКПОТ 400",10,400]],
+   gifts:[["🐸 Пепе",40],["💝 Сердечко",30],["🎂 Торт",20],["🏆 Кубок",10]]},
+  {key:"golden", name:"👑 Golden Case", price:300, emoji:"👑", img:"images/golden.png",
+   items:[["80 монет",55,80],["300 монет",35,300],["ДЖЕКПОТ 1200",10,1200]],
+   gifts:[["🏆 Кубок",40],["💎 Кристалл",35],["🚀 Ракета",20],["👑 Корона",5]]},
+  {key:"ruby",   name:"💎 Ruby Case",   price:700, emoji:"💎", img:"images/ruby.png",
+   items:[["220 монет",55,220],["700 монет",35,700],["ДЖЕКПОТ 2800",10,2800]],
+   gifts:[["💎 Кристалл",50],["🚀 Ракета",30],["👑 Корона",20]]},
+  {key:"ghost",  name:"👻 Ghost Case",  price:1500, emoji:"👻", img:"images/ghost.png",
+   items:[["450 монет",55,450],["1600 монет",35,1600],["ДЖЕКПОТ 6000",10,6000]],
+   gifts:[["🚀 Ракета",50],["👑 Корона",35],["🐸 Пепе-легенда",15]]},
+  {key:"dragon", name:"🐲 Dragon Case", price:3000, emoji:"🐲", img:"images/dragon.png",
+   items:[["900 монет",55,900],["3200 монет",35,3200],["ДЖЕКПОТ 12000",10,12000]],
+   gifts:[["🐲 Дракон",60],["👑 Корона-легенда",30],["🚀 Ракета-легенда",10]]},
 ];
+function caseVisual(c){
+  if(c.img){
+    return `<img class="case-img" src="${c.img}" alt=""
+      onerror="this.style.display='none';this.parentNode.querySelector('.case-fb').style.display='flex';"/>
+      <div class="case-fb" style="display:none">${c.emoji}</div>`;
+  }
+  return `<div class="case-fb">${c.emoji}</div>`;
+}
 function renderCases(){
   document.getElementById("cases-list").innerHTML = cases.map((c,i)=>`
     <div class="card" id="case-${i}">
+      ${caseVisual(c)}
       <h3>${c.name}</h3><p class="price">${c.price} монет</p>
       <p class="muted">Шансы: ${c.items.map(it=>it[0]+" "+it[1]+"%").join(", ")}</p>
+      <p class="muted">Подарки: ${c.gifts.map(gt=>gt[0]).join(", ")}</p>
       <button class="btn" onclick="buyCase(${i})">Открыть</button>
     </div>`).join("");
 }
@@ -156,6 +187,11 @@ function pickCase(c){
   let r = Math.random()*100, t = 0;
   for(const it of c.items){ t += it[1]; if(r <= t) return it; }
   return c.items[c.items.length-1];
+}
+function pickGift(c){
+  let r = Math.random()*100, t = 0;
+  for(const gt of c.gifts){ t += gt[1]; if(r <= t) return gt[0]; }
+  return null;
 }
 function buyCase(i){
   const c = cases[i];
@@ -174,15 +210,19 @@ function buyCase(i){
     if(tick > 12){
       clearInterval(spin);
       const item = pickCase(c);
+      const giftDrop = pickGift(c);
+      if(giftDrop) stats.gifts[giftDrop] = (stats.gifts[giftDrop] || 0) + 1;
       stats.balance += item[2];
       if(item[2] > c.price) stats.wins++;
       save(); renderBal();
       const jackpot = item[0].includes("ДЖЕКПОТ");
+      const giftLine = giftDrop ? `<p>🎁 Подарок: <b>${giftDrop}</b></p>` : "";
       card.innerHTML = `<h3>${c.name}</h3>
+        ${giftLine}
         <p>${jackpot?"🎊 <span class='jack'>":"🎉 <span class='win'>"}${item[0]}</span></p>
         <p class="muted">−${c.price} за кейс · +${item[2]} приз · баланс ${stats.balance} 💰</p>
         <button class="btn" onclick="renderCases()">Открыть ещё</button>`;
-      send({action:"settle", game:"case", bet:c.price, net:item[2]-c.price});
+      send({action:"settle", game:"case", bet:c.price, net:item[2]-c.price, gift:giftDrop});
     }
   }, 100);
 }
@@ -342,7 +382,7 @@ function minesCash(){
   endGame("mines", prize);
 }
 
-// --- Краш (шанс ужесточён) ---
+// --- Краш ---
 function crashStart(){
   g.point = +(Math.max(1.01, Math.min(10, 0.95/(1-Math.random())))).toFixed(2);
   g.mult = 1.0;
@@ -440,7 +480,7 @@ function cardsGo(choice){
   endGame("cards", prize);
 }
 
-// --- Рулетка (шанс ужесточён) ---
+// --- Рулетка ---
 function rouStart(){
   const vals = [[0.2,30],[0.5,25],[1,20],[1.2,10],[2,8],[3,4],[5,2],[10,1]];
   function pick(){
@@ -559,7 +599,7 @@ function chickenCash(){
   endGame("chicken", prize);
 }
 
-// --- Дартс (шанс ужесточён: промах 70%) ---
+// --- Дартс ---
 function dartsStart(){
   menu(`<h3>🎯 Дартс</h3>
     <p class="muted">Ставка ${g.bet}. Один бросок:</p>
@@ -634,13 +674,24 @@ function cupsGo(choice){
   endGame("cups", prize);
 }
 
+// ---------- ПОДАРКИ ----------
+function renderGifts(){
+  const el = document.getElementById("gifts-list");
+  const keys = Object.keys(stats.gifts);
+  if(!keys.length){
+    el.innerHTML = `<p class="muted">Пока пусто. Открывай кейсы — подарки будут падать отсюда же.</p>`;
+    return;
+  }
+  el.innerHTML = keys.map(k=>`<div class="gift-item"><span>${k}</span><b>×${stats.gifts[k]}</b></div>`).join("");
+}
+
 // ---------- ПОДДЕРЖКА ----------
 function goSupport(){
   if(tg.openTelegramLink) tg.openTelegramLink("https://t.me/tsartixc");
   else window.open("https://t.me/tsartixc","_blank");
 }
 
-renderCases(); renderGames(); renderBal();
+renderCases(); renderGames(); renderBal(); renderGifts();
 </script>
 </body>
 </html>
